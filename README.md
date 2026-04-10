@@ -174,12 +174,6 @@ The platform includes an Apache Spark pipeline that processes engagement data as
 
 ---
 
-## 📄 License
-
-This project is licensed under the MIT License.
-
----
-
 ## 👤 Author
 
 **Yashvardhan Khanduja**  
