@@ -177,4 +177,4 @@ The platform includes an Apache Spark pipeline that processes engagement data as
 ## 👤 Author
 
 **Yashvardhan Khanduja**  
-[GitHub](https://github.com/Yashhh0602) · [LinkedIn](https://linkedin.com/in/your-linkedin) · vardhan.yash265@gmail.com
+[GitHub](https://github.com/Yashhh0602) · [LinkedIn](https://www.linkedin.com/in/yashvardhan-khanduja07) · vardhan.yash265@gmail.com
