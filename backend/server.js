@@ -1,6 +1,6 @@
+import "dotenv/config";
 import path from "path";
 import express from "express";
-import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 
 import authRoutes from "./routes/auth.routes.js";
@@ -12,9 +12,12 @@ import { app, server } from "./socket/socket.js";
 
 const PORT = process.env.PORT || 5000;
 
-const __dirname = path.resolve();
+if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+	console.error("JWT_SECRET must be set and at least 32 characters long. Refusing to start.");
+	process.exit(1);
+}
 
-dotenv.config();
+const __dirname = path.resolve();
 
 app.use(express.json()); // to parse the incoming requests with JSON payloads (from req.body)
 app.use(cookieParser());

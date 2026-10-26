@@ -5,9 +5,15 @@ import express from "express";
 const app = express();
 
 const server = http.createServer(app);
+
+// Comma separated list of allowed origins. Defaults to the Vite dev server and the local server.
+const allowedOrigins = (process.env.CLIENT_ORIGIN || "http://localhost:5173,http://localhost:5000")
+	.split(",")
+	.map((origin) => origin.trim());
+
 const io = new Server(server, {
 	cors: {
-		origin: ["http://localhost:2000"],
+		origin: allowedOrigins,
 		methods: ["GET", "POST"],
 	},
 });
