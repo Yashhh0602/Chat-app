@@ -1,17 +1,16 @@
-﻿# chat-app-realtime
-# 💬 Distributed Real-Time Messaging Platform
+﻿# 💬 Chat App
 
-A scalable, full-stack real-time chat application built with Node.js, Socket.IO, and MongoDB — supporting 100+ concurrent users with sub-100ms latency, JWT-based authentication, and analytics powered by Apache Spark.
+A real time one to one chat app. Node.js, Express and MongoDB on the backend, React and Vite on the frontend, with Socket.IO delivering new messages and online status.
 
 ---
 
 ## 🚀 Features
 
-- **Real-Time Messaging** — Bi-directional WebSocket communication via Socket.IO for instant message delivery
-- **Secure Authentication** — JWT-based auth with role-based access control (RBAC)
-- **High Availability** — 99.9% uptime through database indexing and connection pooling
-- **Analytics Pipeline** — Asynchronous data pipelines using Apache Spark to process engagement data and generate dashboards
-- **Scalable Architecture** — REST API + WebSocket hybrid backend supporting 100+ concurrent users at <100ms latency
+- **One to one conversations.** Pick a user from the sidebar and chat. History is stored in MongoDB.
+- **Real time delivery.** New messages are pushed to the receiver over Socket.IO, with a notification sound.
+- **Online status.** The server tracks connected users and broadcasts who is online.
+- **Accounts.** Sign up, log in and log out. Passwords are hashed with bcrypt.
+- **Cookie based auth.** A JWT is stored in an httpOnly, sameSite strict cookie and checked on every protected route.
 
 ---
 
@@ -19,35 +18,34 @@ A scalable, full-stack real-time chat application built with Node.js, Socket.IO,
 
 | Layer | Technology |
 |---|---|
-| **Backend** | Node.js, Express.js |
-| **Real-Time** | Socket.IO (WebSockets) |
-| **Database** | MongoDB |
-| **Auth** | JSON Web Tokens (JWT) |
-| **Analytics** | Apache Spark |
-| **API** | REST + WebSocket |
+| **Backend** | Node.js, Express |
+| **Real time** | Socket.IO |
+| **Database** | MongoDB, Mongoose |
+| **Auth** | JWT (httpOnly cookie), bcryptjs |
+| **Frontend** | React, Vite, Zustand, Tailwind CSS, daisyUI |
 
 ---
 
 ## 📁 Project Structure
 
 ```
-chat-app/
-├── server/
-│   ├── config/          # DB connection, environment config
-│   ├── controllers/     # Route handlers
-│   ├── middleware/       # JWT auth, RBAC middleware
-│   ├── models/          # MongoDB schemas (User, Message, Room)
-│   ├── routes/          # REST API routes
-│   ├── socket/          # Socket.IO event handlers
-│   └── index.js         # Entry point
-├── client/
-│   ├── public/
+Chat-app/
+├── backend/
+│   ├── controllers/   # auth, message and user handlers
+│   ├── db/            # MongoDB connection
+│   ├── middleware/    # protectRoute (JWT cookie check)
+│   ├── models/        # User, Conversation, Message
+│   ├── routes/        # REST routes
+│   ├── socket/        # Socket.IO server and online users
+│   ├── utils/         # token generation
+│   └── server.js      # entry point, also serves the built frontend
+├── frontend/
 │   └── src/
-│       ├── components/  # UI components
-│       ├── pages/       # Chat, Login, Register
-│       └── utils/       # API helpers, socket client
-├── analytics/           # Apache Spark pipelines
-├── .env.example
+│       ├── components/  # messages, sidebar, skeletons
+│       ├── context/     # auth and socket context
+│       ├── hooks/       # data and socket hooks
+│       ├── pages/       # home, login, signup
+│       └── zustand/     # conversation state
 └── package.json
 ```
 
@@ -57,47 +55,41 @@ chat-app/
 
 ### Prerequisites
 
-- Node.js v18+
+- Node.js
 - MongoDB (local or Atlas)
-- Apache Spark (for analytics, optional)
 
-### Installation
+### Install and build
 
 ```bash
-# Clone the repo
 git clone https://github.com/Yashhh0602/Chat-app.git
 cd Chat-app
 
-# Install dependencies
-npm install
-
-# Set up environment variables
-cp .env.example .env
+# installs backend and frontend dependencies and builds the frontend
+npm run build
 ```
 
-### Environment Variables
+### Environment variables
 
 Create a `.env` file in the root directory:
 
 ```env
 PORT=5000
-MONGO_URI=mongodb://localhost:27017/chatapp
-JWT_SECRET=your_jwt_secret_here
-JWT_EXPIRES_IN=7d
-CLIENT_URL=http://localhost:3000
+MONGO_DB_URI=your_mongodb_connection_string
+JWT_SECRET=at_least_32_random_characters
+CLIENT_ORIGIN=http://localhost:5173
+NODE_ENV=development
 ```
 
-### Running the App
+- `JWT_SECRET` signs the auth cookie. The server refuses to start if it is missing or shorter than 32 characters. Generate one with `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`.
+- `CLIENT_ORIGIN` is the comma separated list of origins allowed to open a Socket.IO connection. It defaults to `http://localhost:5173,http://localhost:5000`.
+
+### Run
 
 ```bash
-# Development mode
-npm run dev
-
-# Production
-npm start
+npm start        # or: npm run server (nodemon)
 ```
 
-The server will start on `http://localhost:5000`.
+The server serves the built frontend and the API on `http://localhost:5000`.
 
 ---
 
@@ -106,20 +98,20 @@ The server will start on `http://localhost:5000`.
 ### Auth
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/auth/register` | Register a new user |
-| POST | `/api/auth/login` | Login and receive JWT |
+| POST | `/api/auth/signup` | Create an account |
+| POST | `/api/auth/login` | Log in and set the JWT cookie |
+| POST | `/api/auth/logout` | Clear the JWT cookie |
+
+### Users
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/users` | Users for the sidebar (protected) |
 
 ### Messages
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/messages/:roomId` | Fetch message history |
-| POST | `/api/messages` | Send a message |
-
-### Rooms
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/rooms` | List all rooms |
-| POST | `/api/rooms` | Create a new room |
+| GET | `/api/messages/:id` | Conversation history with a user (protected) |
+| POST | `/api/messages/send/:id` | Send a message to a user (protected) |
 
 ---
 
@@ -127,50 +119,8 @@ The server will start on `http://localhost:5000`.
 
 | Event | Direction | Description |
 |-------|-----------|-------------|
-| `join_room` | Client → Server | Join a chat room |
-| `leave_room` | Client → Server | Leave a chat room |
-| `send_message` | Client → Server | Send a message |
-| `receive_message` | Server → Client | Receive a new message |
-| `user_joined` | Server → Client | Notify room of new user |
-| `user_left` | Server → Client | Notify room of user leaving |
-
----
-
-## 📊 Analytics
-
-The platform includes an Apache Spark pipeline that processes engagement data asynchronously and generates dashboards with metrics such as:
-
-- Active users per room over time
-- Message volume and frequency trends
-- Peak usage windows
-
----
-
-## 🔒 Security
-
-- Passwords are hashed before storage
-- JWT tokens are signed and verified on every protected route
-- Role-based access control restricts admin-only operations
-- Input validation and sanitization on all endpoints
-
----
-
-## 📈 Performance
-
-- **<100ms** average message latency under load
-- **100+ concurrent users** supported
-- **99.9% uptime** via MongoDB indexing and connection pooling
-- Horizontal scaling-ready architecture
-
----
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create your feature branch: `git checkout -b feature/my-feature`
-3. Commit your changes: `git commit -m 'Add some feature'`
-4. Push to the branch: `git push origin feature/my-feature`
-5. Open a Pull Request
+| `getOnlineUsers` | Server → Client | Current list of online user IDs |
+| `newMessage` | Server → Client | A new message for the receiver |
 
 ---
 
