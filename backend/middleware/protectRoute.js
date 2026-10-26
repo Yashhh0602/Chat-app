@@ -25,6 +25,11 @@ const protectRoute = async (req, res, next) => {
 
 		next();
 	} catch (error) {
+		// Bad signature, malformed or expired token (TokenExpiredError and NotBeforeError extend JsonWebTokenError).
+		if (error instanceof jwt.JsonWebTokenError) {
+			const reason = error instanceof jwt.TokenExpiredError ? "Token Expired" : "Invalid Token";
+			return res.status(401).json({ error: `Unauthorized - ${reason}` });
+		}
 		console.log("Error in protectRoute middleware: ", error.message);
 		res.status(500).json({ error: "Internal server error" });
 	}
