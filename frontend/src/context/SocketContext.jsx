@@ -15,7 +15,8 @@ export const SocketContextProvider = ({ children }) => {
 
 	useEffect(() => {
 		if (authUser) {
-			const socket = io("https://chat-app-1-q4oa.onrender.com/", {
+			// Same origin by default (the server serves the built frontend); set VITE_SOCKET_URL to point elsewhere.
+			const socket = io(import.meta.env.VITE_SOCKET_URL || window.location.origin, {
 				query: {
 					userId: authUser._id,
 				},
